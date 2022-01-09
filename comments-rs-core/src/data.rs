@@ -1,4 +1,4 @@
-use std::{fmt::Display, io::Read};
+use std::fmt::Display;
 
 use lazy_static::lazy_static;
 use regex::{Regex, RegexBuilder};
@@ -13,8 +13,7 @@ lazy_static! {
 }
 
 pub struct Thread {
-    name: String,
-    hash: String
+    id: String
 }
 
 #[derive(Validate, Clone, Serialize, Deserialize, Debug, PartialEq, Eq)]
@@ -27,7 +26,6 @@ pub struct User {
 
 #[derive(Validate, Clone, Serialize, Deserialize, Debug)]
 pub struct Comment {
-    pub thread: String,
     pub date: u128,
     #[validate(regex = "CONTENT_REGEX")]
     pub content: String,
@@ -49,13 +47,12 @@ impl User {
 }
 
 impl Comment {
-    pub fn new(thread: String, date: u128, content: &str) -> Self {
-        Comment::try_new(thread, date, content).expect("Invalid comment!")
+    pub fn new(date: u128, content: &str) -> Self {
+        Comment::try_new(date, content).expect("Invalid comment!")
     }
 
-    pub fn try_new(thread: String, date: u128, content: &str) -> Result<Self, Error> {
+    pub fn try_new(date: u128, content: &str) -> Result<Self, Error> {
         let comment = Comment {
-            thread,
             date,
             content: content.into(),
         };
@@ -72,24 +69,9 @@ impl From<ValidationErrors> for Error {
     }
 }
 
-fn sha256_digest<R: Read>(mut reader: R) -> Result<Digest> {
-    let mut context = Context::new(&SHA256);
-    let mut buffer = [0; 1024];
-
-    loop {
-        let count = reader.read(&mut buffer)?;
-        if count == 0 {
-            break;
-        }
-        context.update(&buffer[..count]);
-    }
-
-    Ok(context.finish())
-}
-
 #[cfg(test)]
 mod tests {
-    use std::{time::{SystemTime, UNIX_EPOCH}, hash::Hasher};
+    use std::time::{SystemTime, UNIX_EPOCH};
 
     use super::{Comment, User};
 
@@ -105,7 +87,6 @@ mod tests {
     #[test]
     fn test_validate_comment() {
         let comment = Comment::try_new(
-            DefaultHasher::new().hash("").finish(),
             SystemTime::now()
                 .duration_since(UNIX_EPOCH)
                 .unwrap()
