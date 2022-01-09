@@ -1,2 +1,2 @@
 # comment-rs
-An commenting engine
+A commenting engine
