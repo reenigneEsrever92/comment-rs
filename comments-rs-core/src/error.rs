@@ -13,9 +13,10 @@ pub enum Error {
     StoreError(StoreError)
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum StoreError {
-    NameNotUnique
+    NameNotUnique,
+    ThreadNotExists(String)
 }
 
 impl<'a> CommentError<'a> for Error {
@@ -26,6 +27,7 @@ impl<'a> CommentError<'a> for Error {
             Error::StoreError(store_error) => {
                 match store_error {
                     StoreError::NameNotUnique => "E-01-01",
+                    StoreError::ThreadNotExists(_) => "E-01-02",
                 }
             },
         }
