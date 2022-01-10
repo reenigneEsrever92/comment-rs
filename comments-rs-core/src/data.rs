@@ -29,7 +29,7 @@ pub struct User {
     pub name: String,
 }
 
-#[derive(Validate, Clone, Serialize, Deserialize, Debug)]
+#[derive(Validate, Clone, Serialize, Deserialize, Debug, PartialEq, Eq)]
 pub struct Comment {
     #[validate(regex = "HASH_REGEX")]
     pub thread_hash: String,

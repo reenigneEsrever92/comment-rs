@@ -1,6 +1,6 @@
 use std::future::Future;
 
-use crate::{data::{User, Thread, Comment}, error::{Error, StoreError}};
+use crate::{data::{User, Thread, Comment}, error::StoreError};
 
 pub trait UserStore {
     fn save_user(& mut self, user: User) -> Box<dyn Future<Output = Result<User, StoreError>> + Unpin>;

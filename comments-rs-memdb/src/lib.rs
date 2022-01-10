@@ -7,8 +7,8 @@ use std::{
 
 use comments_rs_core::{
     data::{Comment, Thread, User},
-    error::{Error, StoreError},
-    traits::{CommentStore, UserStore, ThreadStore},
+    error::StoreError,
+    traits::{CommentStore, ThreadStore, UserStore},
 };
 
 #[derive(Default)]
@@ -20,7 +20,7 @@ struct CommentDb {
 
 #[derive(Default)]
 struct DbWrapper {
-    data: Box<Mutex<CommentDb>>
+    data: Box<Mutex<CommentDb>>,
 }
 
 struct ImmediateFuture<T> {
@@ -39,7 +39,10 @@ where
 }
 
 impl UserStore for DbWrapper {
-    fn save_user(&mut self, user: User) -> Box<dyn Future<Output = Result<User, StoreError>> + Unpin> {
+    fn save_user(
+        &mut self,
+        user: User,
+    ) -> Box<dyn Future<Output = Result<User, StoreError>> + Unpin> {
         let data = self.data.get_mut().unwrap();
         data.users.push(user);
 
@@ -53,7 +56,8 @@ impl UserStore for DbWrapper {
         name: &str,
     ) -> Box<dyn Future<Output = Result<Option<User>, StoreError>> + Unpin> {
         let data = self.data.lock().unwrap();
-        let option_user = data.users
+        let option_user = data
+            .users
             .iter()
             .find(|user| user.name.as_str() == name)
             .map(|user| user.clone());
@@ -69,7 +73,10 @@ impl UserStore for DbWrapper {
     ) -> Box<dyn Future<Output = Result<Option<User>, StoreError>> + Unpin> {
         let data = self.data.get_mut().unwrap();
 
-        let index = data.users.iter().position(|user| user.name.as_str() == name);
+        let index = data
+            .users
+            .iter()
+            .position(|user| user.name.as_str() == name);
 
         match index {
             Some(index) => Box::new(ImmediateFuture {
@@ -81,7 +88,6 @@ impl UserStore for DbWrapper {
 }
 
 impl ThreadStore for DbWrapper {
-
     fn save_thread(
         &mut self,
         thread: Thread,
@@ -93,7 +99,6 @@ impl ThreadStore for DbWrapper {
             result: Ok(data.threads.last().unwrap().clone()),
         })
     }
-
 
     fn delete_thread(
         &mut self,
@@ -115,25 +120,37 @@ impl ThreadStore for DbWrapper {
         &self,
         hash: &str,
     ) -> Box<dyn Future<Output = Result<Option<Thread>, StoreError>> + Unpin> {
-        todo!()
+        let data = self.data.lock().unwrap();
+
+        Box::new(ImmediateFuture {
+            result: Ok(data
+                .threads
+                .iter()
+                .find(|thread| thread.hash == hash)
+                .map(|thread| thread.clone())),
+        })
     }
 
     fn find_all_threads(
         &self,
     ) -> Box<dyn Future<Output = Result<Vec<Thread>, StoreError>> + Unpin> {
-        todo!()
+        let data = self.data.lock().unwrap();
+
+        Box::new(ImmediateFuture {
+            result: Ok(data.threads.clone()),
+        })
     }
 }
 
 impl CommentStore for DbWrapper {
-    
     fn save_comment(
         &mut self,
         comment: Comment,
     ) -> Box<dyn Future<Output = Result<Comment, StoreError>> + Unpin> {
         let data = self.data.get_mut().unwrap();
 
-        let thread = data.threads
+        let thread = data
+            .threads
             .iter()
             .find(|thread| thread.hash == comment.thread_hash);
 
@@ -155,25 +172,48 @@ impl CommentStore for DbWrapper {
         &mut self,
         hash: &str,
     ) -> Box<dyn Future<Output = Result<Option<Comment>, StoreError>> + Unpin> {
-        todo!()
+        let data = self.data.get_mut().unwrap();
+
+        let index = data
+            .comments
+            .iter()
+            .position(|comment| comment.hash == hash);
+
+        match index {
+            Some(index) => Box::new(ImmediateFuture {
+                result: Ok(Some(data.comments.remove(index))),
+            }),
+            None => Box::new(ImmediateFuture { result: Ok(None) }),
+        }
     }
 
     fn find_all_comments(
         &self,
         thread_hash: &str,
     ) -> Box<dyn Future<Output = Result<Vec<Comment>, StoreError>> + Unpin> {
-        todo!()
+        let data = self.data.lock().unwrap();
+
+        let comments: Vec<Comment> = data
+            .comments
+            .iter()
+            .filter(|comment| comment.thread_hash == thread_hash)
+            .map(|comment| comment.clone())
+            .collect();
+
+        Box::new(ImmediateFuture {
+            result: Ok(comments),
+        })
     }
 }
 
 #[cfg(test)]
 mod tests {
     use comments_rs_core::{
-        data::{Thread, User, Comment},
-        traits::{CommentStore, UserStore, ThreadStore},
+        data::{Comment, Thread, User},
+        traits::{CommentStore, ThreadStore, UserStore},
     };
 
-    use crate::{CommentDb, DbWrapper};
+    use crate::DbWrapper;
 
     #[tokio::test]
     async fn test_save_user() {
@@ -210,7 +250,10 @@ mod tests {
         user_db.save_user(user.clone()).await.unwrap();
         user_db.save_user(user1.clone()).await.unwrap();
 
-        assert_eq!(user_db.find_user("name1").await.unwrap(), Some(user1.clone()));
+        assert_eq!(
+            user_db.find_user("name1").await.unwrap(),
+            Some(user1.clone())
+        );
         assert_eq!(user_db.delete_user("name1").await.unwrap(), Some(user1));
         assert_eq!(user_db.delete_user("name1").await.unwrap(), None);
         assert_eq!(user_db.find_user("name1").await.unwrap(), None)
@@ -251,14 +294,85 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_save_comment() {
+    async fn test_find_thread_by_hash() {
         let mut comment_db = DbWrapper::default();
         let thread = Thread::new("thread");
 
-        let save_result = comment_db.save_thread(thread.clone()).await.unwrap();
+        let _saved_thread = comment_db.save_thread(thread.clone()).await.unwrap();
 
-        assert_eq!(save_result, thread);
+        assert_eq!(
+            comment_db
+                .find_thread_by_hash(thread.hash.as_str())
+                .await
+                .unwrap(),
+            Some(thread)
+        );
+    }
 
+    #[tokio::test]
+    async fn test_find_all_threads() {
+        let mut comment_db = DbWrapper::default();
+        let thread = Thread::new("thread");
+
+        let saved_thread = comment_db.save_thread(thread.clone()).await.unwrap();
+
+        assert_eq!(
+            comment_db.find_all_threads().await.unwrap(),
+            vec![saved_thread.clone()]
+        );
+
+        let saved_thread_2 = comment_db.save_thread(thread.clone()).await.unwrap();
+
+        assert_eq!(
+            comment_db.find_all_threads().await.unwrap(),
+            vec![saved_thread, saved_thread_2]
+        );
+    }
+
+    #[tokio::test]
+    async fn test_save_comment() {
+        let mut comment_db = DbWrapper::default();
+        let thread = comment_db.save_thread(Thread::new("thread")).await.unwrap();
         let comment = Comment::new(thread.hash.as_str(), "user@mail.com", 17, "content");
+        let saved_comment = comment_db.save_comment(comment.clone()).await.unwrap();
+
+        assert_eq!(saved_comment, comment);
+    }
+
+    #[tokio::test]
+    async fn test_delete_comment() {
+        let mut comment_db = DbWrapper::default();
+        let thread = comment_db.save_thread(Thread::new("thread")).await.unwrap();
+        let comment = Comment::new(thread.hash.as_str(), "user@mail.com", 17, "content");
+        let saved_comment = comment_db.save_comment(comment.clone()).await.unwrap();
+
+        assert_eq!(&saved_comment, &comment);
+        assert_eq!(
+            comment_db
+                .delete_comment(comment.hash.as_str())
+                .await
+                .unwrap(),
+            Some(saved_comment)
+        );
+        assert_eq!(
+            comment_db
+                .delete_comment(comment.hash.as_str())
+                .await
+                .unwrap(),
+            None
+        );
+    }
+
+    #[tokio::test]
+    async fn test_find_all_comments() {
+        let mut comment_db = DbWrapper::default();
+        let thread = comment_db.save_thread(Thread::new("thread")).await.unwrap();
+        let thread_2 = comment_db.save_thread(Thread::new("thread_2")).await.unwrap();
+        let _comment = comment_db.save_comment(Comment::new(thread.hash.as_str(), "user@mail.com", 17, "content")).await.unwrap();
+        let _comment_2 = comment_db.save_comment(Comment::new(thread.hash.as_str(), "user1@mail.com", 17, "content")).await.unwrap();
+        let _comment_3 = comment_db.save_comment(Comment::new(thread_2.hash.as_str(), "user2@mail.com", 17, "content")).await.unwrap();
+
+        assert_eq!(comment_db.find_all_comments(thread.hash.as_str()).await.unwrap().len(), 2);
+        assert_eq!(comment_db.find_all_comments(thread_2.hash.as_str()).await.unwrap().len(), 1);
     }
 }
