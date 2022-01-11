@@ -10,7 +10,8 @@ pub trait CommentError<'a>: std::error::Error {
 #[derive(Debug)]
 pub enum Error {
     ValidationError{ validation_errors: ValidationErrors },
-    StoreError(StoreError)
+    StoreError(StoreError),
+    NewtorkError
 }
 
 #[derive(Debug, Clone)]
@@ -30,6 +31,7 @@ impl<'a> CommentError<'a> for Error {
                     StoreError::ThreadNotExists(_) => "E-01-02",
                 }
             },
+            Error::NewtorkError => todo!(),
         }
     }
 

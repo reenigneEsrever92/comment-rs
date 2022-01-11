@@ -1,6 +1,10 @@
-use std::future::Future;
+use std::{future::Future, process::Output};
 
-use crate::{data::{User, Thread, Comment}, error::StoreError};
+use crate::{data::{User, Thread, Comment}, error::{StoreError, Error}};
+
+pub trait Frontend {
+    fn run(&self) -> Box<dyn Future<Output = Result<(), Error>>>;
+}
 
 pub trait UserStore {
     fn save_user(& mut self, user: User) -> Box<dyn Future<Output = Result<User, StoreError>> + Unpin>;
