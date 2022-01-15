@@ -1,9 +1,9 @@
-use std::{future::Future, process::Output};
+use std::{future::Future, process::Output, pin::Pin};
 
 use crate::{data::{User, Thread, Comment}, error::{StoreError, Error}};
 
 pub trait Frontend {
-    fn run(&self) -> Box<dyn Future<Output = Result<(), Error>>>;
+    fn run(&self) -> Pin<Box<dyn Future<Output = Result<(), Error>>>>;
 }
 
 pub trait UserStore {
