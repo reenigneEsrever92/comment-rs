@@ -8,7 +8,7 @@ use std::{
 use comments_rs_core::{
     data::{Comment, Thread, User},
     error::StoreError,
-    traits::{CommentStore, ThreadStore, UserStore},
+    traits::{CommentStore, StoreResult, ThreadStore, UserStore},
 };
 
 #[derive(Default)]
@@ -39,10 +39,7 @@ where
 }
 
 impl UserStore for MemDB {
-    fn save_user(
-        &mut self,
-        user: User,
-    ) -> Pin<Box<dyn Future<Output = Result<User, StoreError>>>> {
+    fn save_user(&mut self, user: User) -> StoreResult<User> {
         let data = self.data.get_mut().unwrap();
         data.users.push(user);
 
@@ -51,10 +48,7 @@ impl UserStore for MemDB {
         })
     }
 
-    fn find_user(
-        &self,
-        name: &str,
-    ) -> Box<dyn Future<Output = Result<Option<User>, StoreError>> + Unpin> {
+    fn find_user(&self, name: &str) -> StoreResult<Option<User>> {
         let data = self.data.lock().unwrap();
         let option_user = data
             .users
@@ -62,7 +56,7 @@ impl UserStore for MemDB {
             .find(|user| user.name.as_str() == name)
             .map(|user| user.clone());
 
-        Box::new(ImmediateFuture {
+        Box::pin(ImmediateFuture {
             result: Ok(option_user),
         })
     }
@@ -70,7 +64,7 @@ impl UserStore for MemDB {
     fn delete_user(
         &mut self,
         name: &str,
-    ) -> Box<dyn Future<Output = Result<Option<User>, StoreError>> + Unpin> {
+    ) -> StoreResult<Option<User>> {
         let data = self.data.get_mut().unwrap();
 
         let index = data
@@ -79,14 +73,16 @@ impl UserStore for MemDB {
             .position(|user| user.name.as_str() == name);
 
         match index {
-            Some(index) => Box::new(ImmediateFuture {
+            Some(index) => Box::pin(ImmediateFuture {
                 result: Ok(Some(data.users.remove(index))),
             }),
-            None => Box::new(ImmediateFuture { result: Ok(None) }),
+            None => Box::pin(ImmediateFuture { result: Ok(None) }),
         }
     }
 
-    fn find_all_users(&self) -> Pin<Box<dyn Future<Output = Result<Vec<User>, StoreError>> + Sync + Send>> {
+    fn find_all_users(
+        &self,
+    ) -> StoreResult<Vec<User>> {
         let data = self.data.lock().unwrap();
 
         Box::pin(ImmediateFuture {
@@ -99,11 +95,11 @@ impl ThreadStore for MemDB {
     fn save_thread(
         &mut self,
         thread: Thread,
-    ) -> Box<dyn Future<Output = Result<Thread, StoreError>> + Unpin> {
+    ) -> StoreResult<Thread> {
         let data = self.data.get_mut().unwrap();
         data.threads.push(thread);
 
-        Box::new(ImmediateFuture {
+        Box::pin(ImmediateFuture {
             result: Ok(data.threads.last().unwrap().clone()),
         })
     }
@@ -111,26 +107,26 @@ impl ThreadStore for MemDB {
     fn delete_thread(
         &mut self,
         hash: &str,
-    ) -> Box<dyn Future<Output = Result<Option<Thread>, StoreError>> + Unpin> {
+    ) -> StoreResult<Option<Thread>> {
         let data = self.data.get_mut().unwrap();
 
         let index = data.threads.iter().position(|thread| thread.hash == hash);
 
         match index {
-            Some(index) => Box::new(ImmediateFuture {
+            Some(index) => Box::pin(ImmediateFuture {
                 result: Ok(Some(data.threads.remove(index))),
             }),
-            None => Box::new(ImmediateFuture { result: Ok(None) }),
+            None => Box::pin(ImmediateFuture { result: Ok(None) }),
         }
     }
 
     fn find_thread_by_hash(
         &self,
         hash: &str,
-    ) -> Box<dyn Future<Output = Result<Option<Thread>, StoreError>> + Unpin> {
+    ) -> StoreResult<Option<Thread>> {
         let data = self.data.lock().unwrap();
 
-        Box::new(ImmediateFuture {
+        Box::pin(ImmediateFuture {
             result: Ok(data
                 .threads
                 .iter()
@@ -141,10 +137,10 @@ impl ThreadStore for MemDB {
 
     fn find_all_threads(
         &self,
-    ) -> Box<dyn Future<Output = Result<Vec<Thread>, StoreError>> + Unpin> {
+    ) -> StoreResult<Vec<Thread>> {
         let data = self.data.lock().unwrap();
 
-        Box::new(ImmediateFuture {
+        Box::pin(ImmediateFuture {
             result: Ok(data.threads.clone()),
         })
     }
@@ -154,7 +150,7 @@ impl CommentStore for MemDB {
     fn save_comment(
         &mut self,
         comment: Comment,
-    ) -> Box<dyn Future<Output = Result<Comment, StoreError>> + Unpin> {
+    ) -> StoreResult<Comment> {
         let data = self.data.get_mut().unwrap();
 
         let thread = data
@@ -166,11 +162,11 @@ impl CommentStore for MemDB {
             Some(_) => {
                 data.comments.push(comment);
 
-                Box::new(ImmediateFuture {
+                Box::pin(ImmediateFuture {
                     result: Ok(data.comments.last().unwrap().clone()),
                 })
             }
-            None => Box::new(ImmediateFuture {
+            None => Box::pin(ImmediateFuture {
                 result: Err(StoreError::ThreadNotExists(comment.thread_hash.into())),
             }),
         }
@@ -179,7 +175,7 @@ impl CommentStore for MemDB {
     fn delete_comment(
         &mut self,
         hash: &str,
-    ) -> Box<dyn Future<Output = Result<Option<Comment>, StoreError>> + Unpin> {
+    ) -> StoreResult<Option<Comment>> {
         let data = self.data.get_mut().unwrap();
 
         let index = data
@@ -188,17 +184,17 @@ impl CommentStore for MemDB {
             .position(|comment| comment.hash == hash);
 
         match index {
-            Some(index) => Box::new(ImmediateFuture {
+            Some(index) => Box::pin(ImmediateFuture {
                 result: Ok(Some(data.comments.remove(index))),
             }),
-            None => Box::new(ImmediateFuture { result: Ok(None) }),
+            None => Box::pin(ImmediateFuture { result: Ok(None) }),
         }
     }
 
-    fn find_all_comments(
+    fn find_thread_comments(
         &self,
         thread_hash: &str,
-    ) -> Box<dyn Future<Output = Result<Vec<Comment>, StoreError>> + Unpin> {
+    ) -> StoreResult<Vec<Comment>> {
         let data = self.data.lock().unwrap();
 
         let comments: Vec<Comment> = data
@@ -208,7 +204,7 @@ impl CommentStore for MemDB {
             .map(|comment| comment.clone())
             .collect();
 
-        Box::new(ImmediateFuture {
+        Box::pin(ImmediateFuture {
             result: Ok(comments),
         })
     }
@@ -427,7 +423,7 @@ mod tests {
 
         assert_eq!(
             comment_db
-                .find_all_comments(thread.hash.as_str())
+                .find_thread_comments(thread.hash.as_str())
                 .await
                 .unwrap()
                 .len(),
@@ -435,7 +431,7 @@ mod tests {
         );
         assert_eq!(
             comment_db
-                .find_all_comments(thread_2.hash.as_str())
+                .find_thread_comments(thread_2.hash.as_str())
                 .await
                 .unwrap()
                 .len(),
