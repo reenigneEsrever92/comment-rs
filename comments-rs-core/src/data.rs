@@ -116,8 +116,6 @@ fn hash(input: &[u8]) -> String {
 
 #[cfg(test)]
 mod tests {
-    use std::time::{SystemTime, UNIX_EPOCH};
-
     use crate::data::hash;
 
     use super::{Comment, User};

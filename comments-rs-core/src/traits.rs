@@ -1,4 +1,4 @@
-use std::{future::Future, process::Output, pin::Pin};
+use std::{future::Future, pin::Pin};
 
 use crate::{data::{User, Thread, Comment}, error::{StoreError, Error}};
 
@@ -6,8 +6,8 @@ pub trait Frontend {
     fn run(&self) -> Pin<Box<dyn Future<Output = Result<(), Error>>>>;
 }
 
-pub trait UserStore {
-    fn save_user(& mut self, user: User) -> Box<dyn Future<Output = Result<User, StoreError>> + Unpin>;
+pub trait UserStore: Send + Sync {
+    fn save_user(& mut self, user: User) -> Pin<Box<dyn Future<Output = Result<User, StoreError>>>>;
     fn delete_user(& mut self, name: &str) -> Box<dyn Future<Output = Result<Option<User>, StoreError>> + Unpin>;
     fn find_user(&self, name: &str) -> Box<dyn Future<Output = Result<Option<User>, StoreError>> + Unpin>;
     fn find_all_users(&self) -> Pin<Box<dyn Future<Output= Result<Vec<User>, StoreError>> + Send + Sync>>;

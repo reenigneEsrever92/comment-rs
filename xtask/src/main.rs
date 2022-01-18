@@ -1,8 +1,8 @@
 use std::io::Write;
 
 use async_graphql::{EmptyMutation, EmptySubscription, Schema};
-use clap::{AppSettings, Parser, Subcommand};
-use comments_rs_graphql::RootQuery;
+use clap::{Parser, Subcommand};
+use comments_rs_graphql::Query;
 
 #[derive(Parser)]
 struct Cli {
@@ -24,7 +24,7 @@ fn main() {
 }
 
 fn generate_sdl() {
-    let schema = Schema::build(RootQuery, EmptyMutation, EmptySubscription).finish();
+    let schema = Schema::build(Query, EmptyMutation, EmptySubscription).finish();
     let dir = std::env::current_dir().unwrap().as_path().to_owned();
     let file_path = dir.join("comments-rs-graphql/schema.graphql");
     let mut file = std::fs::File::create(file_path)

@@ -1,6 +1,10 @@
-type RootQuery {
-	root: String!
+type GraphQLUser {
+	name: String!
+	email: String!
+}
+type Query {
+	users: [GraphQLUser!]!
 }
 schema {
-	query: RootQuery
+	query: Query
 }

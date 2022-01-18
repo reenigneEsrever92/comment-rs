@@ -42,11 +42,11 @@ impl UserStore for MemDB {
     fn save_user(
         &mut self,
         user: User,
-    ) -> Box<dyn Future<Output = Result<User, StoreError>> + Unpin> {
+    ) -> Pin<Box<dyn Future<Output = Result<User, StoreError>>>> {
         let data = self.data.get_mut().unwrap();
         data.users.push(user);
 
-        Box::new(ImmediateFuture {
+        Box::pin(ImmediateFuture {
             result: Ok(data.users.last().unwrap().clone()),
         })
     }
