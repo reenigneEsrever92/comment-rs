@@ -19,7 +19,7 @@ struct CommentDb {
 }
 
 #[derive(Default)]
-struct DbWrapper {
+pub struct MemDB {
     data: Box<Mutex<CommentDb>>,
 }
 
@@ -38,7 +38,7 @@ where
     }
 }
 
-impl UserStore for DbWrapper {
+impl UserStore for MemDB {
     fn save_user(
         &mut self,
         user: User,
@@ -85,9 +85,17 @@ impl UserStore for DbWrapper {
             None => Box::new(ImmediateFuture { result: Ok(None) }),
         }
     }
+
+    fn find_all_users(&self) -> Pin<Box<dyn Future<Output = Result<Vec<User>, StoreError>> + Sync + Send>> {
+        let data = self.data.lock().unwrap();
+
+        Box::pin(ImmediateFuture {
+            result: Ok(data.users.clone()),
+        })
+    }
 }
 
-impl ThreadStore for DbWrapper {
+impl ThreadStore for MemDB {
     fn save_thread(
         &mut self,
         thread: Thread,
@@ -142,7 +150,7 @@ impl ThreadStore for DbWrapper {
     }
 }
 
-impl CommentStore for DbWrapper {
+impl CommentStore for MemDB {
     fn save_comment(
         &mut self,
         comment: Comment,
@@ -213,11 +221,11 @@ mod tests {
         traits::{CommentStore, ThreadStore, UserStore},
     };
 
-    use crate::DbWrapper;
+    use crate::MemDB;
 
     #[tokio::test]
     async fn test_save_user() {
-        let mut user_db = DbWrapper::default();
+        let mut user_db = MemDB::default();
         let user = User::new("test@mail.com", "name");
 
         let saved_user = user_db.save_user(user).await.unwrap();
@@ -228,7 +236,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_find_user() {
-        let mut user_db = DbWrapper::default();
+        let mut user_db = MemDB::default();
         let user = User::new("test@mail.com", "name");
         let user1 = User::new("test@mail.com", "name1");
 
@@ -242,8 +250,26 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn test_find_all_users() {
+        let mut user_db = MemDB::default();
+        let user = user_db
+            .save_user(User::new("test@mail.com", "name"))
+            .await
+            .unwrap();
+        let user1 = user_db
+            .save_user(User::new("test@mail.com", "name1"))
+            .await
+            .unwrap();
+
+        assert_eq!(
+            user_db.find_all_users().await.unwrap(),
+            vec![user.clone(), user1.clone()]
+        );
+    }
+
+    #[tokio::test]
     async fn test_delete_user() {
-        let mut user_db = DbWrapper::default();
+        let mut user_db = MemDB::default();
         let user = User::new("test@mail.com", "name");
         let user1 = User::new("test@mail.com", "name1");
 
@@ -261,7 +287,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_save_thread() {
-        let mut comment_db = DbWrapper::default();
+        let mut comment_db = MemDB::default();
         let thread = Thread::new("thread");
 
         let save_result = comment_db.save_thread(thread.clone()).await.unwrap();
@@ -271,7 +297,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_delete_thread() {
-        let mut comment_db = DbWrapper::default();
+        let mut comment_db = MemDB::default();
         let thread = Thread::new("thread");
 
         let save_result = comment_db.save_thread(thread.clone()).await.unwrap();
@@ -295,7 +321,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_find_thread_by_hash() {
-        let mut comment_db = DbWrapper::default();
+        let mut comment_db = MemDB::default();
         let thread = Thread::new("thread");
 
         let _saved_thread = comment_db.save_thread(thread.clone()).await.unwrap();
@@ -311,7 +337,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_find_all_threads() {
-        let mut comment_db = DbWrapper::default();
+        let mut comment_db = MemDB::default();
         let thread = Thread::new("thread");
 
         let saved_thread = comment_db.save_thread(thread.clone()).await.unwrap();
@@ -331,7 +357,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_save_comment() {
-        let mut comment_db = DbWrapper::default();
+        let mut comment_db = MemDB::default();
         let thread = comment_db.save_thread(Thread::new("thread")).await.unwrap();
         let comment = Comment::new(thread.hash.as_str(), "user@mail.com", 17, "content");
         let saved_comment = comment_db.save_comment(comment.clone()).await.unwrap();
@@ -341,7 +367,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_delete_comment() {
-        let mut comment_db = DbWrapper::default();
+        let mut comment_db = MemDB::default();
         let thread = comment_db.save_thread(Thread::new("thread")).await.unwrap();
         let comment = Comment::new(thread.hash.as_str(), "user@mail.com", 17, "content");
         let saved_comment = comment_db.save_comment(comment.clone()).await.unwrap();
@@ -365,14 +391,55 @@ mod tests {
 
     #[tokio::test]
     async fn test_find_all_comments() {
-        let mut comment_db = DbWrapper::default();
+        let mut comment_db = MemDB::default();
         let thread = comment_db.save_thread(Thread::new("thread")).await.unwrap();
-        let thread_2 = comment_db.save_thread(Thread::new("thread_2")).await.unwrap();
-        let _comment = comment_db.save_comment(Comment::new(thread.hash.as_str(), "user@mail.com", 17, "content")).await.unwrap();
-        let _comment_2 = comment_db.save_comment(Comment::new(thread.hash.as_str(), "user1@mail.com", 17, "content")).await.unwrap();
-        let _comment_3 = comment_db.save_comment(Comment::new(thread_2.hash.as_str(), "user2@mail.com", 17, "content")).await.unwrap();
+        let thread_2 = comment_db
+            .save_thread(Thread::new("thread_2"))
+            .await
+            .unwrap();
+        let _comment = comment_db
+            .save_comment(Comment::new(
+                thread.hash.as_str(),
+                "user@mail.com",
+                17,
+                "content",
+            ))
+            .await
+            .unwrap();
+        let _comment_2 = comment_db
+            .save_comment(Comment::new(
+                thread.hash.as_str(),
+                "user1@mail.com",
+                17,
+                "content",
+            ))
+            .await
+            .unwrap();
+        let _comment_3 = comment_db
+            .save_comment(Comment::new(
+                thread_2.hash.as_str(),
+                "user2@mail.com",
+                17,
+                "content",
+            ))
+            .await
+            .unwrap();
 
-        assert_eq!(comment_db.find_all_comments(thread.hash.as_str()).await.unwrap().len(), 2);
-        assert_eq!(comment_db.find_all_comments(thread_2.hash.as_str()).await.unwrap().len(), 1);
+        assert_eq!(
+            comment_db
+                .find_all_comments(thread.hash.as_str())
+                .await
+                .unwrap()
+                .len(),
+            2
+        );
+        assert_eq!(
+            comment_db
+                .find_all_comments(thread_2.hash.as_str())
+                .await
+                .unwrap()
+                .len(),
+            1
+        );
     }
 }

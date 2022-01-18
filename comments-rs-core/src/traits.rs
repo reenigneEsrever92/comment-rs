@@ -10,6 +10,7 @@ pub trait UserStore {
     fn save_user(& mut self, user: User) -> Box<dyn Future<Output = Result<User, StoreError>> + Unpin>;
     fn delete_user(& mut self, name: &str) -> Box<dyn Future<Output = Result<Option<User>, StoreError>> + Unpin>;
     fn find_user(&self, name: &str) -> Box<dyn Future<Output = Result<Option<User>, StoreError>> + Unpin>;
+    fn find_all_users(&self) -> Pin<Box<dyn Future<Output= Result<Vec<User>, StoreError>> + Send + Sync>>;
 }
 
 pub trait ThreadStore {

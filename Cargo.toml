@@ -1,3 +1,3 @@
 [workspace]
 
-members = ["comments-rs-core", "comments-rs-postgres", "comments-rs-memdb", "comments-rs-graphql", "xtask"]
+members = ["comments-rs-core", "comments-rs-postgres", "comments-rs-memdb", "comments-rs-graphql", "comments-rs-cli", "xtask"]
