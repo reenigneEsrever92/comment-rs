@@ -4,13 +4,15 @@ use async_graphql::{
     futures_util::TryFutureExt, Context, EmptyMutation, EmptySubscription, Object,
     Schema, SimpleObject,
 };
-use comments_rs_core::{
+use comments_rs_core_backend::{
     data::User,
     error::Error,
     traits::{Frontend, UserStore},
 };
 
 pub struct Query;
+
+pub struct Mutation;
 
 #[derive(SimpleObject)]
 pub struct GraphQLUser {
@@ -31,6 +33,13 @@ impl Query {
             .collect()
     }
 }
+
+// #[Object]
+// impl Mutation {
+//     async fn signup(&self, username: String, password: String) {
+
+//     }
+// }
 
 pub struct GraphQLFrontend {
     pub user_store: Arc<dyn UserStore>,
@@ -65,8 +74,8 @@ mod test {
     use std::sync::Arc;
 
     use crate::GraphQLFrontend;
-    use comments_rs_core::{traits::{Frontend, UserStore}, data::User};
-    use comments_rs_memdb::MemDB;
+    use comments_rs_core_backend::{traits::{Frontend, UserStore}, data::User};
+    use comments_rs_memdb_backend::MemDB;
     use graphql_client::GraphQLQuery;
     use reqwest::Response;
     use serde_json::Value;

@@ -1,3 +1,13 @@
 [workspace]
 
-members = ["comments-rs-core", "comments-rs-postgres", "comments-rs-memdb", "comments-rs-graphql", "comments-rs-cli", "xtask"]
+members = [
+    "backend/comments-rs-core",
+    "backend/comments-rs-postgres",
+    "backend/comments-rs-memdb",
+    "backend/comments-rs-graphql",
+    "backend/comments-rs-google",
+    "backend/comments-rs-cli",
+    "frontend/comments-rs-core",
+    "frontend/comments-rs-google",
+    "xtask",
+]

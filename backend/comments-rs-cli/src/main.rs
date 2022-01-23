@@ -1,8 +1,8 @@
 use std::sync::Arc;
 
-use comments_rs_core::traits::Frontend;
-use comments_rs_graphql::GraphQLFrontend;
-use comments_rs_memdb::MemDB;
+use comments_rs_core_backend::traits::Frontend;
+use comments_rs_graphql_backend::GraphQLFrontend;
+use comments_rs_memdb_backend::MemDB;
 use futures::join;
 
 fn main() {

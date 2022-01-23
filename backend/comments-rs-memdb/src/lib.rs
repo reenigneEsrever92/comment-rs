@@ -5,7 +5,7 @@ use std::{
     task::{Context, Poll},
 };
 
-use comments_rs_core::{
+use comments_rs_core_backend::{
     data::{Comment, Thread, User},
     error::StoreError,
     traits::{CommentStore, StoreResult, ThreadStore, UserStore},
@@ -212,7 +212,7 @@ impl CommentStore for MemDB {
 
 #[cfg(test)]
 mod tests {
-    use comments_rs_core::{
+    use comments_rs_core_backend::{
         data::{Comment, Thread, User},
         traits::{CommentStore, ThreadStore, UserStore},
     };

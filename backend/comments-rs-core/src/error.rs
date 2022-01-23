@@ -7,14 +7,16 @@ pub trait CommentError<'a>: std::error::Error {
     fn inner(&'a self) -> &'a Error;
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum Error {
     ValidationError{ validation_errors: ValidationErrors },
     StoreError(StoreError),
-    NewtorkError
+    SignupError,
+    NewtorkError,
+    SignatureError(Vec<String>)
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum StoreError {
     NameNotUnique,
     ThreadNotExists(String)
@@ -32,6 +34,8 @@ impl<'a> CommentError<'a> for Error {
                 }
             },
             Error::NewtorkError => todo!(),
+            Error::SignupError => todo!(),
+            Error::SignatureError(_) => todo!(),
         }
     }
 

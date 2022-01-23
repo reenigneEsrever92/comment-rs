@@ -1,5 +1,5 @@
 [package]
-name = "comments-rs-cli"
+name = "comments-rs-cli-backend"
 version = "0.1.0"
 edition = "2021"
 
@@ -9,6 +9,6 @@ edition = "2021"
 clap = "3.0"
 tokio = { version = "1.15", features = ["full"] }
 futures = "0.3"
-comments-rs-core = { path = "../comments-rs-core" }
-comments-rs-graphql = { path = "../comments-rs-graphql" }
-comments-rs-memdb = { path = "../comments-rs-memdb" }
+comments-rs-core-backend = { path = "../comments-rs-core" }
+comments-rs-graphql-backend = { path = "../comments-rs-graphql" }
+comments-rs-memdb-backend = { path = "../comments-rs-memdb" }

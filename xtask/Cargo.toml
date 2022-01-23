@@ -7,5 +7,5 @@ edition = "2021"
 
 [dependencies]
 async-graphql = "3.0"
-comments-rs-graphql = { path = "../comments-rs-graphql" }
+comments-rs-graphql-backend = { path = "../backend/comments-rs-graphql" }
 clap = { version = "3.0", features = ["derive"] }

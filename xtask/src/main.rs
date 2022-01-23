@@ -2,7 +2,7 @@ use std::io::Write;
 
 use async_graphql::{EmptyMutation, EmptySubscription, Schema};
 use clap::{Parser, Subcommand};
-use comments_rs_graphql::Query;
+use comments_rs_graphql_backend::Query;
 
 #[derive(Parser)]
 struct Cli {

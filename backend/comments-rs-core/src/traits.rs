@@ -1,4 +1,4 @@
-use std::{future::Future, pin::Pin};
+use std::{future::Future, pin::Pin, process::Output};
 
 use crate::{data::{User, Thread, Comment}, error::{StoreError, Error}};
 
@@ -7,6 +7,7 @@ pub trait Frontend {
 }
 
 pub type StoreResult<T> = Pin<Box<dyn Future<Output = Result<T, StoreError>> + Send + Sync>>;
+pub type SignupResult = Pin<Box<dyn Future<Output = Result<User, Error>> + Send + Sync>>;
 
 pub trait UserStore: Send + Sync {
     fn save_user(& mut self, user: User) -> StoreResult<User>;
@@ -27,4 +28,10 @@ pub trait CommentStore: Send + Sync {
     fn save_comment(& mut self, comment: Comment) -> StoreResult<Comment>;
     fn delete_comment(& mut self, hash: &str) -> StoreResult<Option<Comment>>;
     fn find_thread_comments(&self, thread_hash: &str) -> StoreResult<Vec<Comment>>;
+}
+
+pub trait SignupProvider: Send + Sync {
+    fn name(&self) -> &'static str;
+    fn signup(&self, email: &str) -> SignupResult;
+    fn confirm(&self, token: &str, user_name: &str) -> SignupResult;
 }
