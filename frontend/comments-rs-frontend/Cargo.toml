@@ -1,5 +1,5 @@
 [package]
-name = "comments-rs-google-frontend"
+name = "comments-rs-frontend"
 version = "0.1.0"
 edition = "2021"
 
@@ -7,3 +7,4 @@ edition = "2021"
 
 [dependencies]
 yew = "0.19"
+comments-rs-core-frontend = { path = "../comments-rs-core" }
