@@ -1,13 +1,13 @@
 use std::{env, pin::Pin, sync::Arc};
 
 use async_graphql::{
-    futures_util::TryFutureExt, Context, EmptyMutation, EmptySubscription, Object,
-    Schema, SimpleObject,
+    futures_util::TryFutureExt, Context, EmptyMutation, EmptySubscription, Object, Schema,
+    SimpleObject,
 };
 use comments_rs_core_backend::{
-    data::User,
+    data::{Thread, User},
     error::Error,
-    traits::{Frontend, UserStore},
+    traits::{Frontend, ThreadStore, UserStore},
 };
 
 pub struct Query;
@@ -20,6 +20,12 @@ pub struct GraphQLUser {
     email: String,
 }
 
+#[derive(SimpleObject)]
+pub struct GraphQLThread {
+    hash: String,
+    name: String,
+}
+
 #[Object]
 impl Query {
     async fn users(&self, ctx: &Context<'_>) -> Vec<GraphQLUser> {
@@ -29,8 +35,17 @@ impl Query {
             .await
             .unwrap()
             .into_iter()
-            .map(|user| Into::<GraphQLUser>::into(user))
+            .map(|user| user.into())
             .collect()
+    }
+
+    async fn thread(&self, ctx: &Context<'_>, hash: String) -> Option<GraphQLThread> {
+        ctx.data::<Arc<dyn ThreadStore>>()
+            .unwrap()
+            .find_thread_by_hash(&hash)
+            .await
+            .unwrap()
+            .map(|user| user.into())
     }
 }
 
@@ -47,7 +62,19 @@ pub struct GraphQLFrontend {
 
 impl From<User> for GraphQLUser {
     fn from(u: User) -> Self {
-        GraphQLUser { name: u.name, email: u.email }
+        GraphQLUser {
+            name: u.name,
+            email: u.email,
+        }
+    }
+}
+
+impl From<Thread> for GraphQLThread {
+    fn from(t: Thread) -> Self {
+        Self {
+            hash: t.hash,
+            name: t.name,
+        }
     }
 }
 
@@ -56,7 +83,7 @@ impl Frontend for GraphQLFrontend {
         let listen_addr = env::var("LISTEN_ADDR").unwrap_or_else(|_| "localhost:8000".to_owned());
 
         let schema = Schema::build(Query, EmptyMutation, EmptySubscription)
-            .data(self.user_store.clone())    
+            .data(self.user_store.clone())
             .finish();
 
         println!("Hostet at: http://{}", listen_addr);
@@ -74,7 +101,10 @@ mod test {
     use std::sync::Arc;
 
     use crate::GraphQLFrontend;
-    use comments_rs_core_backend::{traits::{Frontend, UserStore}, data::User};
+    use comments_rs_core_backend::{
+        data::User,
+        traits::{Frontend, UserStore},
+    };
     use comments_rs_memdb_backend::MemDB;
     use graphql_client::GraphQLQuery;
     use reqwest::Response;
@@ -93,8 +123,14 @@ mod test {
     async fn test_find_all_comments() {
         let mut memdb = MemDB::default();
 
-        let _user = memdb.save_user(User::new("test@mail.com", "test")).await.expect("Could not save user!");
-        let _user1 = memdb.save_user(User::new("test2@mail.com", "test2")).await.expect("Could not save user!");
+        let _user = memdb
+            .save_user(User::new("test@mail.com", "test"))
+            .await
+            .expect("Could not save user!");
+        let _user1 = memdb
+            .save_user(User::new("test2@mail.com", "test2"))
+            .await
+            .expect("Could not save user!");
 
         let frontend = GraphQLFrontend {
             user_store: Arc::new(memdb),

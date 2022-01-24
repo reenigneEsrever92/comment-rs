@@ -26,7 +26,7 @@ fn main() {
 fn generate_sdl() {
     let schema = Schema::build(Query, EmptyMutation, EmptySubscription).finish();
     let dir = std::env::current_dir().unwrap().as_path().to_owned();
-    let file_path = dir.join("comments-rs-graphql/schema.graphql");
+    let file_path = dir.join("backend/comments-rs-graphql/schema.graphql");
     let mut file = std::fs::File::create(file_path)
         .expect("Could not create file");
 

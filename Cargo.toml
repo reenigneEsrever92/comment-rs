@@ -9,6 +9,7 @@ members = [
     "backend/comments-rs-cli",
     "frontend/comments-rs-core",
     "frontend/comments-rs-frontend",
+    "frontend/comments-rs-graphql",
     "frontend/comments-rs-google",
     "frontend/comments-rs-cli",
     "xtask",

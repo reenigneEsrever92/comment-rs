@@ -1,9 +1,14 @@
+type GraphQLThread {
+	hash: String!
+	name: String!
+}
 type GraphQLUser {
 	name: String!
 	email: String!
 }
 type Query {
 	users: [GraphQLUser!]!
+	thread(hash: String!): GraphQLThread
 }
 schema {
 	query: Query

@@ -3,6 +3,7 @@ use std::rc::Rc;
 use comments_rs_core_frontend::structs::{
     Comment as CommentData, Thread as ThreadData, User as UserData,
 };
+use web_sys::RequestInit;
 use yew::prelude::*;
 
 enum Msg {
@@ -10,7 +11,7 @@ enum Msg {
 }
 
 enum Event {
-    ThreadLoaded(Thread)
+    ThreadLoaded(Thread),
 }
 
 struct Model {
@@ -87,19 +88,41 @@ fn thread(thread: &ThreadProps) -> Html {
     }
 }
 
-struct State {
+struct App {
     thread: Option<ThreadData>,
     open_comment: Option<CommentData>,
     current_user: Option<UserData>,
     comments: Vec<CommentData>,
 }
 
-impl Reducible for State {
-    type Action = Event;
+impl Component for App {
+    type Message = Event;
+    type Properties = AppProps;
 
-    fn reduce(self: std::rc::Rc<Self>, event: Self::Action) -> std::rc::Rc<Self> {
-        match event {
-            Event::ThreadLoaded(thread) => todo!(),
+    fn create(ctx: &Context<Self>) -> Self {
+        Self {
+            thread: None,
+            open_comment: None,
+            current_user: None,
+            comments: Vec::new(),
+        }
+    }
+
+    fn view(&self, ctx: &Context<Self>) -> Html {
+        // ctx.link().send_future();
+
+        html! {
+            <div>
+                { match &self.thread {
+                    Some(thread) => html! {
+                        <Thread data={ ThreadData{ hash: "hash".to_string(), name: "test_name".to_string()} }
+                        comments={ vec![CommentData{ user_name: "test user".to_string(), content: "comment content".to_string() }] }  />
+                            },
+                    None => html! {
+                        <h1>{ "loading ..." }</h1>
+                    }
+                } }
+            </div>
         }
     }
 }
@@ -107,35 +130,9 @@ impl Reducible for State {
 #[derive(Clone, Debug, PartialEq)]
 struct AppContext;
 
-#[function_component(App)]
-fn app(app_props: &AppProps) -> Html {
-    let state = use_state(|| State {
-        thread: None,
-        current_user: None,
-        open_comment: None,
-        comments: Vec::new(),
-    });
-
-    html! {
-        <div>
-            { match &state.thread {
-                Some(thread) => html! {
-                    <Thread data={ ThreadData{ hash: "hash".to_string(), name: "test_name".to_string()} }
-                    comments={ vec![CommentData{ user_name: "test user".to_string(), content: "comment content".to_string() }] }  />
-                        },
-                None => html! {
-                    <h1>{ "loading ..." }</h1>
-                }
-            } }
-        </div>
-    }
-}
-
-fn load_thread(hash: String) {
-
-}
-
 fn main() {
-    let props = AppProps { thread_hash: "test_hash".to_string() };
+    let props = AppProps {
+        thread_hash: "test_hash".to_string(),
+    };
     yew::start_app_with_props::<App>(props);
 }

@@ -7,4 +7,5 @@ edition = "2021"
 
 [dependencies]
 yew = "0.19"
+web-sys = "0.3"
 comments-rs-core-frontend = { path = "../comments-rs-core" }

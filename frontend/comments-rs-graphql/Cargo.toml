@@ -1,0 +1,11 @@
+[package]
+name = "comments-rs-graphql-frontend"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+graphql_client = "0.10"
+reqwest = { version = "0.11", features = ["json"] }
+wasm-bindgen-test = "0.3"
+serde = { version = "1.0", features = ["derive"] }
+comments-rs-core-frontend = { path = "../comments-rs-core" }

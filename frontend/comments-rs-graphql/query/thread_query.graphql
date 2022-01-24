@@ -1,0 +1,6 @@
+query Query($hash: String) {
+    thread {
+        hash,
+        name
+    }
+}

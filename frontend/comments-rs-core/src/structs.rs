@@ -1,4 +1,4 @@
-use yew::Properties;
+use serde::{Serialize, Deserialize};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct User {
@@ -6,7 +6,7 @@ pub struct User {
     name: String
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Thread {
     pub hash: String,
     pub name: String,
